@@ -1,10 +1,70 @@
 ---
 title: "lecture 5 -- data import"
-output: html_document
 date: "2025-09-16"
+output: 
+  html_document:
+    toc: true
+    toc_float: true
 ---
 
-```{r setup, include = FALSE}
+```{r include = FALSE}
 library(tidyverse)
+library(readxl)
+library(haven)
 ```
 
+come back to this and hide unnecessary outputs...
+
+## Importing data tables
+
+### Importing a CSV file
+
+This utilizes relative paths when importing data tables.
+
+```{r message = FALSE}
+# import csv file; don't use read.csv
+# requires "tidyverse" library to be loaded
+litters_df = read_csv(file = "./data/data_wrangling/FAS_litters.csv")
+
+# variable names before cleanup
+names(litters_df)
+
+# clean up variable names by converting them to lower snake case
+litters_df = janitor::clean_names(litters_df)
+names(litters_df)
+```
+
+Fixing the "missing variables messing with variable types" problem:
+
+```{r message = FALSE}
+# fix missing variables in import
+# include na= function to indicate what the missing variables of this table are
+litters_df = read_csv(file = "./data/data_wrangling/FAS_litters.csv", na = c("NA", ".", ""))
+```
+
+`package::function` lets you use a function from a package without loading the whole library.
+
+### Importing an Excel file
+
+```{r}
+# this requires the "readxl" library to be loaded
+mlb_df = read_excel("./data/data_wrangling/mlb11.xlsx")
+
+# sometimes, you need to only import a specific set of cells
+fotr_df = read_excel("./data/data_wrangling/LotR_Words.xlsx", range = "B3:D6")
+```
+
+### Importing a SAS file
+
+```{r}
+# this requires the "haven" library to be loaded
+pulse_df = read_sas("./data/data_wrangling/public_pulse_data.sas7bdat")
+```
+
+## Learning Assessment
+
+Import FAS_pups.csv on my own.
+
+```{r message = FALSE}
+pups_df = read_csv(file = "./data/data_wrangling/FAS_pups.csv")
+```
