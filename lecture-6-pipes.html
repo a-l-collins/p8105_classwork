@@ -1526,8 +1526,8 @@ pull(litters_df, group)
 
 # overall, try to avoid litters_df$group... etc</code></pre>
 </div>
-<div id="learning-assessment" class="section level3">
-<h3>learning assessment</h3>
+<div id="learning-assessment-1" class="section level3">
+<h3>learning assessment 1</h3>
 <pre class="r"><code># select litter number, sex, and PD ears
 select(pups_df, litter_number, sex, pd_ears)</code></pre>
 <pre><code>## # A tibble: 313 × 3
@@ -1567,8 +1567,8 @@ filter(litters_df, group %in% c(&quot;Con7&quot;, &quot;Con8&quot;))
 drop_na(litters_df) # will drop ALL NA rows
 drop_na(litters_df, gd0_weight) # will only drop NA rows in gd0_weight</code></pre>
 </div>
-<div id="learning-assessment-1" class="section level3">
-<h3>learning assessment</h3>
+<div id="learning-assessment-2" class="section level3">
+<h3>learning assessment 2</h3>
 <pre class="r"><code># only pups with sex 1
 filter(pups_df, sex == 1)</code></pre>
 <pre><code>## # A tibble: 155 × 6
@@ -1629,6 +1629,28 @@ arrange(litters_df, group, pups_born_alive)
 
 # arrange in descending order
 arrange(litters_df, desc(pups_born_alive))</code></pre>
+</div>
+<div id="pipe-operator" class="section level3">
+<h3><code>pipe</code> operator</h3>
+<p>Using pipes to pull things together</p>
+<pre class="r"><code># the &quot;bad&quot; way
+litters_df_2 = read_csv(&quot;data/data_wrangling/FAS_litters.csv&quot;, na = c(&quot;NA&quot;, &quot;.&quot;, &quot;&quot;))
+litters_df_2 = janitor::clean_names(litters_df_2)
+litters_df_2 = select(litters_df_2, group, litter_number, starts_with(&quot;gd&quot;))
+litters_df_2 = drop_na(litters_df_2)
+litters_df_2 = mutate(litters_df_2, weight_gain = gd18_weight - gd0_weight)
+
+# the &quot;good&quot; way with pipes
+litters_df_3 = 
+  read_csv(&quot;data/data_wrangling/FAS_litters.csv&quot;, na = c(&quot;NA&quot;, &quot;.&quot;, &quot;&quot;)) %&gt;% 
+  janitor::clean_names() %&gt;% 
+  select(group, litter_number, starts_with(&quot;gd&quot;)) %&gt;% 
+  drop_na() %&gt;% 
+  mutate(weight_gain = gd18_weight - gd0_weight)
+
+# both of these produce the same end result
+# the second is just cleaner, without constantly overwriting the same dataframe
+# in settings, you can turn on default R pipe and use |&gt; instead, but i like %&gt;%</code></pre>
 </div>
 
 

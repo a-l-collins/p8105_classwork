@@ -59,7 +59,7 @@ pull(litters_df, group)
 # overall, try to avoid litters_df$group... etc
 ```
 
-### learning assessment
+### learning assessment 1
 
 ```{r}
 # select litter number, sex, and PD ears
@@ -91,7 +91,7 @@ drop_na(litters_df) # will drop ALL NA rows
 drop_na(litters_df, gd0_weight) # will only drop NA rows in gd0_weight
 ```
 
-### learning assessment
+### learning assessment 2
 
 ```{r}
 # only pups with sex 1
@@ -134,5 +134,30 @@ arrange(litters_df, group, pups_born_alive)
 
 # arrange in descending order
 arrange(litters_df, desc(pups_born_alive))
+```
+
+### `pipe` operator
+
+Using pipes to pull things together
+
+```{r results = FALSE, message = FALSE}
+# the "bad" way
+litters_df_2 = read_csv("data/data_wrangling/FAS_litters.csv", na = c("NA", ".", ""))
+litters_df_2 = janitor::clean_names(litters_df_2)
+litters_df_2 = select(litters_df_2, group, litter_number, starts_with("gd"))
+litters_df_2 = drop_na(litters_df_2)
+litters_df_2 = mutate(litters_df_2, weight_gain = gd18_weight - gd0_weight)
+
+# the "good" way with pipes
+litters_df_3 = 
+  read_csv("data/data_wrangling/FAS_litters.csv", na = c("NA", ".", "")) %>% 
+  janitor::clean_names() %>% 
+  select(group, litter_number, starts_with("gd")) %>% 
+  drop_na() %>% 
+  mutate(weight_gain = gd18_weight - gd0_weight)
+
+# both of these produce the same end result
+# the second is just cleaner, without constantly overwriting the same dataframe
+# in settings, you can turn on default R pipe and use |> instead, but i like %>%
 ```
 
