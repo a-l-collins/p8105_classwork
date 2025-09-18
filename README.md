@@ -1,5 +1,11 @@
-# P8105 Classwork
+---
+title: "P8105 Class Notes"
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+---
 
-This repo holds class notes from P8105.
-
-lecture 5 = data wrangling
+### Lecture Topics
+Lecture 5 = 
+Lecture 6 = dplyr functions and pipe operator
