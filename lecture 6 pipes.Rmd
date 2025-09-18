@@ -161,3 +161,19 @@ litters_df_3 =
 # in settings, you can turn on default R pipe and use |> instead, but i like %>%
 ```
 
+### learning assessment 3
+
+```{r}
+# load pups data
+# clean variable names
+# filter sex == 1
+# remove pd_ears
+# create variable for if pd_pivot >= 7
+pups_df_2 = 
+  read_csv("data/data_wrangling/FAS_pups.csv", skip = 3, na = c("NA", ".", "")) %>% 
+  janitor::clean_names() %>% 
+  filter(sex == 1) %>% 
+  select(-pd_ears) %>% 
+  mutate(pd_pivot_ge7 = pd_pivot >= 7)
+```
+

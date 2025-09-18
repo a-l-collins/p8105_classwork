@@ -1652,6 +1652,28 @@ litters_df_3 =
 # the second is just cleaner, without constantly overwriting the same dataframe
 # in settings, you can turn on default R pipe and use |&gt; instead, but i like %&gt;%</code></pre>
 </div>
+<div id="learning-assessment-3" class="section level3">
+<h3>learning assessment 3</h3>
+<pre class="r"><code># load pups data
+# clean variable names
+# filter sex == 1
+# remove pd_ears
+# create variable for if pd_pivot &gt;= 7
+pups_df_2 = 
+  read_csv(&quot;data/data_wrangling/FAS_pups.csv&quot;, skip = 3, na = c(&quot;NA&quot;, &quot;.&quot;, &quot;&quot;)) %&gt;% 
+  janitor::clean_names() %&gt;% 
+  filter(sex == 1) %&gt;% 
+  select(-pd_ears) %&gt;% 
+  mutate(pd_pivot_ge7 = pd_pivot &gt;= 7)</code></pre>
+<pre><code>## Rows: 313 Columns: 6
+## ── Column specification ────────────────────────────────────────────────────────
+## Delimiter: &quot;,&quot;
+## chr (1): Litter Number
+## dbl (5): Sex, PD ears, PD eyes, PD pivot, PD walk
+## 
+## ℹ Use `spec()` to retrieve the full column specification for this data.
+## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
+</div>
 
 
 
