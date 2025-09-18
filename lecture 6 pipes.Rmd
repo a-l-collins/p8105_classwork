@@ -1,0 +1,65 @@
+---
+title: "lecture 6 -- pipes and dplyr"
+date: "2025-09-18"
+output: html_document
+---
+
+```{r include = FALSE}
+library(tidyverse)
+```
+
+Import `FAS_litters` and `FAS_pups` datasets and clean them:
+
+```{r message = FALSE, warning = FALSE}
+# import FAS_litters
+litters_df = read_csv("data/data_wrangling/FAS_litters.csv", na = c("NA", ".", ""))
+litters_df = janitor::clean_names(litters_df)
+
+# import FAS_pups
+# exclude first three rows
+pups_df = read_csv("data/data_wrangling/FAS_pups.csv", skip = 3, na = c("NA", ".", ""))
+pups_df = janitor::clean_names(pups_df)
+```
+
+### `select` function
+
+Options for selecting variables from a dataframe:
+
+```{r results = FALSE}
+# selecting select variables
+select(litters_df, group, litter_number, gd0_weight)
+
+# selecting a range of variables
+select(litters_df, group:gd_of_birth)
+
+# select by removal
+select(litters_df, -group)
+
+# select by prefix
+# ends_with() and contains() are also options
+select(litters_df, starts_with("gd"))
+
+# rearrange variables
+select(litters_df, litter_number, everything())
+relocate(litters_df, litter_number)
+
+# rename by selecting
+# group will be renamed to GROUP
+select(litters_df, GROUP = group, everything())
+rename(litters_df, GROUP = group)
+
+# only selecting one variable
+# will give you a dataframe with one variable
+select(litters_df, group)
+pull(litters_df, group)
+
+# overall, try to avoid litters_df$group... etc
+```
+
+### learning assessment
+
+```{r}
+# select litter number, sex, and PD ears
+select(pups_df, litter_number, sex, pd_ears)
+```
+
