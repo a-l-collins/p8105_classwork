@@ -1,0 +1,6 @@
+---
+title: "lecture 7 data tidying"
+date: "2025-09-23"
+output: github_document
+---
+

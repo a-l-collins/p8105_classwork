@@ -1,16 +1,10 @@
----
-title: "lecture 6 -- pipes and dplyr"
-date: "2025-09-18"
-output: github_document
----
-
-```{r include = FALSE}
-library(tidyverse)
-```
+lecture 6 – pipes and dplyr
+================
+2025-09-18
 
 Import `FAS_litters` and `FAS_pups` datasets and clean them:
 
-```{r message = FALSE, warning = FALSE}
+``` r
 # import FAS_litters
 litters_df = read_csv("data/data_wrangling/FAS_litters.csv", na = c("NA", ".", ""))
 litters_df = janitor::clean_names(litters_df)
@@ -25,7 +19,7 @@ pups_df = janitor::clean_names(pups_df)
 
 Options for selecting variables from a dataframe:
 
-```{r results = FALSE}
+``` r
 # selecting select variables
 select(litters_df, group, litter_number, gd0_weight)
 
@@ -58,16 +52,31 @@ pull(litters_df, group)
 
 ### learning assessment 1
 
-```{r}
+``` r
 # select litter number, sex, and PD ears
 select(pups_df, litter_number, sex, pd_ears)
 ```
+
+    ## # A tibble: 313 × 3
+    ##    litter_number   sex pd_ears
+    ##    <chr>         <dbl>   <dbl>
+    ##  1 #85               1       4
+    ##  2 #85               1       4
+    ##  3 #1/2/95/2         1       5
+    ##  4 #1/2/95/2         1       5
+    ##  5 #5/5/3/83/3-3     1       5
+    ##  6 #5/5/3/83/3-3     1       5
+    ##  7 #5/4/2/95/2       1      NA
+    ##  8 #4/2/95/3-3       1       4
+    ##  9 #4/2/95/3-3       1       4
+    ## 10 #2/2/95/3-2       1       4
+    ## # ℹ 303 more rows
 
 ### `filter` function
 
 Options for filtering from a dataframe:
 
-```{r results = FALSE}
+``` r
 # equal to
 filter(litters_df, gd_of_birth == 20)
 
@@ -90,19 +99,51 @@ drop_na(litters_df, gd0_weight) # will only drop NA rows in gd0_weight
 
 ### learning assessment 2
 
-```{r}
+``` r
 # only pups with sex 1
 filter(pups_df, sex == 1)
+```
 
+    ## # A tibble: 155 × 6
+    ##    litter_number   sex pd_ears pd_eyes pd_pivot pd_walk
+    ##    <chr>         <dbl>   <dbl>   <dbl>    <dbl>   <dbl>
+    ##  1 #85               1       4      13        7      11
+    ##  2 #85               1       4      13        7      12
+    ##  3 #1/2/95/2         1       5      13        7       9
+    ##  4 #1/2/95/2         1       5      13        8      10
+    ##  5 #5/5/3/83/3-3     1       5      13        8      10
+    ##  6 #5/5/3/83/3-3     1       5      14        6       9
+    ##  7 #5/4/2/95/2       1      NA      14        5       9
+    ##  8 #4/2/95/3-3       1       4      13        6       8
+    ##  9 #4/2/95/3-3       1       4      13        7       9
+    ## 10 #2/2/95/3-2       1       4      NA        8      10
+    ## # ℹ 145 more rows
+
+``` r
 # only pups with PD walk less than 11 and sex 2
 filter(pups_df, pd_walk < 11, sex == 2)
 ```
+
+    ## # A tibble: 127 × 6
+    ##    litter_number   sex pd_ears pd_eyes pd_pivot pd_walk
+    ##    <chr>         <dbl>   <dbl>   <dbl>    <dbl>   <dbl>
+    ##  1 #1/2/95/2         2       4      13        7       9
+    ##  2 #1/2/95/2         2       4      13        7      10
+    ##  3 #1/2/95/2         2       5      13        8      10
+    ##  4 #1/2/95/2         2       5      13        8      10
+    ##  5 #1/2/95/2         2       5      13        6      10
+    ##  6 #5/5/3/83/3-3     2       5      13        8      10
+    ##  7 #5/5/3/83/3-3     2       5      14        7      10
+    ##  8 #5/5/3/83/3-3     2       5      14        8      10
+    ##  9 #5/4/2/95/2       2      NA      14        7      10
+    ## 10 #5/4/2/95/2       2      NA      14        7      10
+    ## # ℹ 117 more rows
 
 ### `mutate` function
 
 Mutate (create/modify variables) within a dataframe
 
-```{r results = FALSE}
+``` r
 # creating a variable
 mutate(
   litters_df, 
@@ -115,14 +156,13 @@ mutate(
   litters_df,
   group = str_to_lower(group)
 )
-
 ```
 
 ### `arrange` function
 
 Arranging things within a dataframe
 
-```{r results = FALSE}
+``` r
 # rearrange to follow the order of pups_born_alive variable
 arrange(litters_df, pups_born_alive)
 
@@ -137,7 +177,7 @@ arrange(litters_df, desc(pups_born_alive))
 
 Using pipes to pull things together
 
-```{r results = FALSE, message = FALSE}
+``` r
 # the "bad" way
 litters_df_2 = read_csv("data/data_wrangling/FAS_litters.csv", na = c("NA", ".", ""))
 litters_df_2 = janitor::clean_names(litters_df_2)
@@ -160,7 +200,7 @@ litters_df_3 =
 
 ### learning assessment 3
 
-```{r}
+``` r
 # load pups data
 # clean variable names
 # filter sex == 1
@@ -174,3 +214,11 @@ pups_df_2 =
   mutate(pd_pivot_ge7 = pd_pivot >= 7)
 ```
 
+    ## Rows: 313 Columns: 6
+    ## ── Column specification ────────────────────────────────────────────────────────
+    ## Delimiter: ","
+    ## chr (1): Litter Number
+    ## dbl (5): Sex, PD ears, PD eyes, PD pivot, PD walk
+    ## 
+    ## ℹ Use `spec()` to retrieve the full column specification for this data.
+    ## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
