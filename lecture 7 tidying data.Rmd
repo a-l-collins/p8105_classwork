@@ -4,3 +4,199 @@ date: "2025-09-23"
 output: github_document
 ---
 
+```{r include = FALSE}
+library(tidyverse)
+library(dplyr)
+```
+
+This document will discuss tidying data.
+
+### `pivot_longer` function
+
+```{r}
+# importing the package initially
+pulse_df <- 
+  haven::read_sas("./data/data_wrangling/public_pulse_data.sas7bdat") %>% 
+  janitor::clean_names()
+
+pulse_df
+```
+
+use `pivot_longer` to convert data from wide to long
+
+```{r}
+# make the data longer
+# remove unnecessary prefix
+# rename baseline indicator to something matching the rest
+pulse_tidy_df <- pivot_longer(
+  pulse_df,
+  bdi_score_bl:bdi_score_12m,
+  names_to = "visit",
+  names_prefix = "bdi_score_",
+  values_to = "bdi"
+) %>% 
+mutate (
+  visit = replace(visit, visit == "bl", "00m"), 
+  visit = factor(visit)
+)
+
+pulse_tidy_df
+```
+
+### learning assessment
+
+Combine the gd_weight variables into a long format:
+
+```{r message = FALSE}
+litters_df <- 
+  read_csv("./data/data_wrangling/FAS_litters.csv", na = c("NA", ".", "")) %>% 
+  janitor::clean_names()
+
+litters_df
+
+# making table long
+# cleaning data values
+# would be nice if there was a names_suffix function
+litters_tidy_df <- pivot_longer(
+  litters_df,
+  gd0_weight:gd18_weight,
+  names_to = "gd",
+  names_prefix = "gd",
+  values_to = "weight"
+) %>% 
+mutate(
+  gd = case_match(gd,
+    "0_weight" ~ 0,
+    "18_weight" ~ 18
+  )
+)
+
+litters_tidy_df
+```
+
+### `pivot_wider` function
+
+"Un-tidying" data using pivot_wider
+
+```{r}
+# example dataframe we can work with
+analysis_result <- tibble(
+  group = c("treatment", "treatment", "placebo", "placebo"),
+  time = c("pre", "post", "pre", "post"),
+  mean = c(4, 8, 3.5, 4)
+)
+
+analysis_result
+
+# using pivot_wider
+analysis_result_untidy <- pivot_wider(
+  analysis_result,
+  names_from = "time",
+  values_from = "mean"
+)
+
+analysis_result_untidy
+```
+
+### binding rows
+
+An example of joining three datasets via binding rows
+
+```{r}
+# preparing a dataset for use
+fellowship_ring <- 
+  readxl::read_excel("./data/data_wrangling/LotR_Words.xlsx", range = "B3:D6") %>% 
+  mutate(movie = "fellowship_ring")
+
+fellowship_ring
+
+two_towers <-
+  readxl::read_excel("./data/data_wrangling/LotR_Words.xlsx", range = "F3:H6") %>% 
+  mutate(movie = "two_towers")
+
+two_towers
+
+return_king <-
+  readxl::read_excel("./data/data_wrangling/LotR_Words.xlsx", range = "J3:L6") %>% 
+  mutate(movie = "return_king")
+
+return_king
+
+# pulling all three together into a single dataset
+lotr <-
+  bind_rows(fellowship_ring, two_towers, return_king) %>% 
+  janitor::clean_names() %>% 
+  pivot_longer(
+    female:male,
+    names_to = "gender",
+    values_to = "words"
+  ) %>% 
+  mutate(race = str_to_lower(race)) %>% 
+  select(movie, everything())
+
+lotr
+```
+
+### joining datasets
+
+```{r message = FALSE}
+# preparing a dataset for use
+pups_df <-
+  read_csv("./data/data_wrangling/FAS_pups.csv", skip = 3, na = c("NA", ".", "")) %>% 
+  janitor::clean_names() %>% 
+  mutate(sex = 
+           case_match(
+             sex,
+             1 ~ "male",
+             2 ~ "female"),
+         sex = as.factor(sex))
+
+pups_df
+
+litters_df <-
+  read_csv("./data/data_wrangling/FAS_litters.csv", na = c("NA", ".", "")) %>% 
+  janitor::clean_names() %>% 
+  separate(group, into = c("dose", "day_of_tx"), sep = 3) %>% 
+  relocate(litter_number) %>% 
+  mutate(
+    wt_gain = gd18_weight - gd0_weight,
+    dose = str_to_lower(dose)
+  )
+
+litters_df
+```
+
+#### left join
+
+```{r}
+fas_df <- left_join(pups_df, litters_df, by = "litter_number")
+
+fas_df
+```
+
+#### right join
+
+```{r}
+fas_df <- right_join(pups_df, litters_df, by = "litter_number")
+
+fas_df
+```
+
+#### inner join
+
+```{r}
+fas_df <- inner_join(pups_df, litters_df, by = "litter_number")
+
+fas_df
+```
+
+#### full join
+
+```{r}
+fas_df <- full_join(pups_df, litters_df, by = "litter_number")
+
+fas_df
+```
+
+
+
