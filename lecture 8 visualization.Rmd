@@ -1,0 +1,132 @@
+---
+title: "lecture 8 -- visualization"
+date: "2025-09-25"
+output: github_document
+---
+
+```{r include = FALSE}
+library(tidyverse)
+library(ggridges)
+```
+
+Importing the data which will be used:
+
+```{r}
+library(p8105.datasets)
+data("weather_df")
+```
+
+### scatterplots
+
+Basic scatterplot:
+
+```{r warning = FALSE}
+ggplot(weather_df, aes(x = tmin, y = tmax)) +
+  geom_point()
+```
+
+Another option is to do the following method, which allows for some degree of 
+pre-processing if you don't want to save those pre-processing steps:
+
+```{r warning = FALSE}
+weather_df %>% 
+  ggplot(aes(x = tmin, y = tmax)) + 
+  geom_point()
+```
+
+### advanced scatterplots
+
+Adding in a color key:
+
+```{r warning = FALSE}
+ggplot(weather_df, aes(x = tmin, y = tmax)) +
+  geom_point(aes(color = name))
+```
+
+Adding in a smooth curve, and making the points a bit transparent:
+
+```{r warning = FALSE, message = FALSE}
+ggplot(weather_df, aes(x = tmin, y = tmax)) +
+  geom_point(aes(color = name), alpha = 0.5) +
+  geom_smooth(se = FALSE)
+```
+
+Adding a facet based on name
+
+```{r warning = FALSE, message = FALSE}
+ggplot(weather_df, aes(x = tmin, y = tmax, color = name)) +
+  geom_point(aes(color = name), alpha = 0.5) +
+  geom_smooth(se = FALSE) +
+  facet_grid(. ~ name)
+```
+
+Changing x to be date, and only checking precipitation:
+
+```{r warning = FALSE, message = FALSE}
+ggplot(weather_df, aes(x = date, y = tmax, color = name)) +
+  geom_point(aes(size = prcp), alpha = 0.5) +
+  geom_smooth(se = FALSE) +
+  facet_grid(. ~ name) # format = "row ~ column"
+```
+
+### learning assessment
+
+Using `weather_df`, filter by Central Park, compare temperatures and convert them 
+to Fahrenheit, and overlay a linear regression line.
+
+```{r warning = FALSE, message = FALSE}
+weather_df %>% 
+  filter(name == "CentralPark_NY") %>% 
+  mutate(
+    tmax_fahr = tmax * (9 / 5) + 32,
+    tmin_fahr = tmin * (9 / 5) + 32) %>% 
+  ggplot(aes(x = tmin_fahr, y = tmax_fahr)) +
+  geom_point(alpha = 0.5) +
+  geom_smooth(method = lm, se = FALSE)
+```
+
+### univariate plots
+
+Histograms
+
+```{r warning = FALSE, message = FALSE}
+ggplot(weather_df, aes(x = tmax)) +
+  geom_histogram()
+```
+
+You can play around with aesthetics here too
+
+```{r warning = FALSE}
+ggplot(weather_df, aes(x = tmax, fill = name)) +
+  geom_histogram(position = "dodge", binwidth = 2)
+```
+
+Density plots
+
+```{r warning = FALSE}
+ggplot(weather_df, aes(x = tmax, fill = name)) +
+  geom_density(alpha = 0.4, adjust = 0.5, color = "blue")
+```
+
+Boxplots
+
+```{r warning = FALSE}
+ggplot(weather_df, aes(x = name, y = tmax)) +
+  geom_boxplot()
+```
+
+Violin plots
+
+```{r warning = FALSE}
+ggplot(weather_df, aes(x = name, y = tmax)) +
+  geom_violin(aes(fill = name), alpha = 0.5) +
+  stat_summary(fun = "median", color = "blue")
+```
+
+Ridge plots
+
+```{r warning = FALSE, message = FALSE}
+ggplot(weather_df, aes(x = tmax, y = name)) +
+  geom_density_ridges(scale = 0.85)
+```
+
