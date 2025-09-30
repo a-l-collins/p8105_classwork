@@ -1,0 +1,184 @@
+---
+title: "lecture 9 visualization 2"
+date: "2025-09-30"
+output: github_document
+---
+
+```{r include = FALSE}
+library(tidyverse)
+library(patchwork)
+```
+
+### ggplot labels
+
+Setting up the dataset that will be used:
+
+```{r}
+library(p8105.datasets)
+data("weather_df")
+```
+
+Using this scatterplot:
+
+```{r warning = FALSE}
+weather_df %>% 
+  ggplot(aes(x = tmin, y = tmax)) +
+  geom_point(aes(color = name), alpha = 0.5)
+```
+
+Labels can all be controlled using `labs`
+
+```{r warning = FALSE}
+weather_df %>% 
+  ggplot(aes(x = tmin, y = tmax)) +
+  geom_point(aes(color = name), alpha = 0.5) +
+  labs(
+    title = "Temperature plot",
+    x = "Minimum daily temperature (C)",
+    y = "Maximum daily temperature (C)",
+    color = "Location",
+    caption = "Data from the rnoaa package"
+  )
+```
+
+### ggplot scales
+
+Controlling the scale of the plot:
+
+```{r warning = FALSE}
+weather_df %>% 
+  ggplot(aes(x = tmin, y = tmax)) +
+  geom_point(aes(color = name), alpha = 0.5) +
+  labs(
+    title = "Temperature plot",
+    x = "Minimum daily temperature (C)",
+    y = "Maximum daily temperature (C)",
+    color = "Location",
+    caption = "Data from the rnoaa package") +
+  scale_x_continuous(
+    breaks = c(-15, 0, 15),
+    labels = c("-15º C", "0", "15")) +
+  scale_y_continuous(
+    trans = "sqrt",
+    position = "right")
+```
+
+There are a lot of things you can do with scales, but likely you'll need to google how 
+to do exactly what it is you want to do.
+
+### ggplot themes
+
+You can use scale to manage the coloring:
+
+```{r warning = FALSE}
+weather_df %>% 
+  ggplot(aes(x = tmin, y = tmax)) + 
+  geom_point(aes(color = name), alpha = .5) + 
+  labs(
+    title = "Temperature plot",
+    x = "Minimum daily temperature (C)",
+    y = "Maxiumum daily temperature (C)",
+    color = "Location",
+    caption = "Data from the rnoaa package") + 
+  scale_color_hue(h = c(100, 300))
+```
+
+The `viridis` package can be used to more easily produce a good theme:
+
+```{r warning = FALSE}
+ggp_temp_plot = 
+  weather_df %>% 
+  ggplot(aes(x = tmin, y = tmax)) + 
+  geom_point(aes(color = name), alpha = .5) + 
+  labs(
+    title = "Temperature plot",
+    x = "Minimum daily temperature (C)",
+    y = "Maxiumum daily temperature (C)",
+    color = "Location",
+    caption = "Data from the rnoaa package"
+  ) + 
+  viridis::scale_color_viridis(
+    name = "Location", 
+    discrete = TRUE
+  )
+
+ggp_temp_plot
+```
+
+You can use themes to change things like legend position:
+
+Note that `legend.position = "none"` will remove the legend, which can be useful.
+
+```{r warning = FALSE}
+ggp_temp_plot + 
+  theme(legend.position = "bottom")
+```
+
+There are some built-in themes, which control how the box looks:
+
+```{r warning = FALSE}
+ggp_temp_plot + 
+  theme_bw() + 
+  theme(legend.position = "bottom")
+
+ggp_temp_plot + 
+  theme_classic() + 
+  theme(legend.position = "bottom")
+
+ggp_temp_plot + 
+  ggthemes::theme_excel() + 
+  theme(legend.position = "bottom")
+```
+
+### setting options
+
+An example of settings you can add to the beginning of a .rmd file, to control how 
+things look:
+
+```{r eval = FALSE}
+library(tidyverse)
+
+knitr::opts_chunk$set(
+  fig.width = 6,
+  fig.asp = .6,
+  out.width = "90%"
+)
+
+theme_set(theme_minimal() + theme(legend.position = "bottom"))
+
+options(
+  ggplot2.continuous.colour = "viridis",
+  ggplot2.continuous.fill = "viridis"
+)
+
+scale_colour_discrete = scale_colour_viridis_d
+scale_fill_discrete = scale_fill_viridis_d
+```
+
+### data arguments in `geom_*`
+
+You can filter by data to control the way in which each exact data points are displayed: 
+
+```{r warning = FALSE}
+central_park_df = 
+  weather_df %>% 
+  filter(name == "CentralPark_NY")
+
+molokai_df = 
+  weather_df %>% 
+  filter(name == "Molokai_HI")
+
+ggplot(data = molokai_df, aes(x = date, y = tmax, color = name)) + 
+  geom_point() + 
+  geom_line(data = central_park_df) 
+```
+
+Realistically, it's sometimes necessary to overlay data summaries on a plot of the complete 
+data. One way to do this is to create a "summary" dataframe and use that when adding a new 
+`geom` to a `ggplot` based on the full data.
+
+### patchwork
+
+This note set imports the `patchwork` library.
+
+Finish later...
