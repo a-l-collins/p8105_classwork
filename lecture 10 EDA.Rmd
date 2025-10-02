@@ -1,0 +1,275 @@
+---
+title: "lecture 10 EDA"
+date: "2025-10-02"
+output: github_document
+---
+
+```{r include = FALSE}
+library(tidyverse)
+library(dplyr)
+
+knitr::opts_chunk$set(
+  fig.width = 6,
+  fig.asp = .6,
+  out.width = "90%"
+)
+
+theme_set(theme_minimal() + theme(legend.position = "bottom"))
+
+options(
+  ggplot2.continuous.colour = "viridis",
+  ggplot2.continuous.fill = "viridis"
+)
+
+scale_colour_discrete = scale_colour_viridis_d
+scale_fill_discrete = scale_fill_viridis_d
+```
+
+Importing the dataset being used:
+
+```{r}
+library(p8105.datasets)
+data("weather_df")
+
+weather_df = 
+  weather_df %>% 
+  mutate(
+    month = lubridate::floor_date(date, unit = "month"))
+```
+
+### initial numeric explorations
+
+Before summarizing data, it can be useful to create initial visualizations to start understanding the data at hand. For example, making a histogram of precipitation values:
+
+```{r warning = FALSE, message = FALSE}
+weather_df %>% 
+  ggplot(aes(x = prcp)) + 
+  geom_histogram()
+```
+
+This is a very skewed histogram. It would be useful to check on the extreme values, to see if they're actually "real" or reasonable:
+
+```{r warning = FALSE, message = FALSE}
+weather_df %>%  
+  filter(prcp >= 1000)
+
+weather_df %>% 
+  filter(tmax >= 20, tmax <= 30) %>% 
+  ggplot(aes(x = tmin, y = tmax, color = name, shape = name)) + 
+  geom_point(alpha = .75)
+```
+
+The high rainfall days in NYC correspond to tropical storm Henri and hurricane Ida, while the high precipitation day in Molokai took place during a cold front. Based on the scatterplot, we can see that central park and Molokai might report temperatures differently than Waterhole.
+
+Generally, it's worth noticing things about your data and asking why things are the way that they are. Even if they don't necessarily make a difference long-term, it's useful to notice these things so that you are aware of them.
+
+### `group_by`
+
+Datasets are often grouped by 1+ categorical variables. `group_by` makes these groupings explicit, so that they can be included in subsequent operations. E.g.:
+
+```{r}
+weather_df %>% 
+  group_by(name, month)
+```
+
+Functions to use with regard to grouping:
+
+- `group_by` groups variables together
+- `summarize` creates one-number summaries within each group
+- `mutate` to define variables within groups
+- `ungroup` removes groups
+
+### counting things
+
+Summarize the number of observations in each month in the complete `weather_df` dataset:
+
+```{r}
+weather_df %>% 
+  group_by(month) %>% 
+  summarize(n_obs = n())
+```
+
+More than one thing can be grouped at once:
+
+```{r message = FALSE}
+weather_df %>% 
+  group_by(name, month) %>% 
+  summarize(n_obs = n())
+```
+
+`count` can be used in place of `group_by` and `summarize`:
+
+```{r}
+weather_df %>% 
+  count(month, name = "n_obs")
+```
+
+`count` is part of tidyverse, and is an alternative to base R's `table`. The difference is that `count` produces a dataframe, while `table` produces a table, and often it is more useful to have a dataframe than a table:
+
+```{r}
+weather_df %>% 
+  pull(month) %>% 
+  table()
+```
+
+`summarize` can be used to compute multiple summaries within each group:
+
+```{r}
+weather_df %>% 
+  group_by(month) %>% 
+  summarize(
+    n_obs = n(),
+    n_days = n_distinct(date))
+```
+
+### 2x2 tables
+
+`group_by` and `summarize` can be used to produce 2x2 table-style information:
+
+```{r message = FALSE}
+weather_df %>% 
+  drop_na(tmax) %>% 
+  mutate(
+    cold = case_when(
+      tmax <  5 ~ "cold",
+      tmax >= 5 ~ "not_cold",
+      TRUE      ~ ""
+  )) %>% 
+  filter(name != "Molokai_HI") %>% 
+  group_by(name, cold) %>% 
+  summarize(count = n())
+```
+
+The resulting dataframe can be then organized into a non-tidy 2x2 format using either `pivot_wider`, or `janitor::tabyl`:
+
+```{r}
+weather_df %>% 
+  drop_na(tmax) %>% 
+  mutate(cold = case_when(
+    tmax <  5 ~ "cold",
+    tmax >= 5 ~ "not_cold",
+    TRUE     ~ ""
+  )) %>% 
+  filter(name != "Molokai_HI") %>% 
+  janitor::tabyl(name, cold)
+```
+
+### general summaries
+
+Standard statistical summaries are regularly computed in `summarize` using functions like `mean`, `median`, `var`, `sd`, `mad`, `IQR`, `min`, and `max`. To use these, you indicate the variable to which they apply and include any additional arguments as necessary:
+
+```{r}
+weather_df %>% 
+  group_by(month) %>% 
+  summarize(
+    mean_tmax = mean(tmax, na.rm = TRUE),
+    mean_prec = mean(prcp, na.rm = TRUE),
+    median_tmax = median(tmax),
+    sd_tmax = sd(tmax))
+```
+
+You can group by more than one variable during this:
+
+```{r message = FALSE}
+weather_df %>% 
+  group_by(name, month) %>% 
+  summarize(
+    mean_tmax = mean(tmax),
+    median_tmax = median(tmax))
+```
+
+Use `across` function to summarize multiple columns using the same summary:
+
+```{r message = FALSE}
+weather_df %>% 
+  group_by(name, month) %>% 
+  summarize(across(tmin:prcp, mean))
+```
+
+`summarize` can be used within broader analysis pipelines because it produces a dataframe-- e.g., producing a plot based on monthly summaries:
+
+```{r message = FALSE}
+weather_df %>% 
+  group_by(name, month) %>% 
+  summarize(mean_tmax = mean(tmax, na.rm = TRUE)) %>% 
+  ggplot(aes(x = month, y = mean_tmax, color = name)) + 
+    geom_point() + geom_line() + 
+    theme(legend.position = "bottom")
+```
+
+While `group_by` and `summarize` typically produce generally tidy results, creating reader-friendly results often requires further tidying:
+
+```{r message = FALSE}
+weather_df %>% 
+  group_by(name, month) %>% 
+  summarize(mean_tmax = mean(tmax, na.rm = TRUE)) %>% 
+  pivot_wider(
+    names_from = name,
+    values_from = mean_tmax) %>% 
+  knitr::kable(digits = 1)
+```
+
+### grouped `mutate`
+
+`summarize` collapses groups into single data points. In contrast, `mutate` and `group_by` used in conjunction will retain all original data points and add new variables computed within groups:
+
+```{r warning = FALSE}
+weather_df %>% 
+  group_by(name) %>% 
+  mutate(
+    mean_tmax = mean(tmax, na.rm = TRUE),
+    centered_tmax = tmax - mean_tmax) %>% 
+  ggplot(aes(x = date, y = centered_tmax, color = name)) + 
+    geom_point() 
+```
+
+### window functions
+
+Window functions take `n` inputs and produce `n` outputs, and the outputs depend on all the inputs. There are a lot of window functions, but the most likely useful ones are `ranking` and `offset` functions:
+
+Finding the max temp ranking within the month:
+
+```{r}
+weather_df %>% 
+  group_by(name, month) %>% 
+  mutate(temp_ranking = min_rank(tmax))
+```
+
+Keep only the day with the lowest max temp each month:
+
+```{r}
+weather_df %>% 
+  group_by(name, month) %>% 
+  filter(min_rank(tmax) < 2)
+```
+
+Keep the three days with the highest max temperature:
+
+```{r}
+weather_df %>% 
+  group_by(name, month) %>% 
+  filter(min_rank(desc(tmax)) < 4)
+```
+
+`offsets` compare an observation to its previous value:
+
+```{r}
+weather_df %>% 
+  group_by(name) %>% 
+  mutate(temp_change = tmax - lag(tmax))
+```
+
+Can be used to quantify day-by-day variability in max temp, or ID largest one-day increase:
+
+```{r}
+weather_df %>% 
+  group_by(name) %>% 
+  mutate(temp_change = tmax - lag(tmax)) %>% 
+  summarize(
+    temp_change_sd = sd(temp_change, na.rm = TRUE),
+    temp_change_max = max(temp_change, na.rm = TRUE))
+```
+
+### limitations
+
+`summarize` can only be used with functions that return a single-number summary. This creates a ceiling, even if it's very high. 
