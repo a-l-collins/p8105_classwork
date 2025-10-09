@@ -1,0 +1,115 @@
+---
+title: "lecture 12 reading data from the web"
+date: "2025-10-07"
+output: github_document
+---
+
+```{r include = FALSE}
+library(tidyverse)
+library(rvest)
+library(httr)
+```
+
+### Extracting Tables
+
+Extracting data via url:
+
+```{r}
+url <- "http://samhda.s3-us-gov-west-1.amazonaws.com/s3fs-public/field-uploads/2k15StateFiles/NSDUHsaeShortTermCHG2015.htm"
+drug_use_html <- read_html(url)
+
+drug_use_html
+```
+
+Extracting tables using html:
+
+```{r}
+drug_use_html %>% html_table()
+```
+
+This extracts 15 tables. If we want to only extract one table, such as the first, we can do:
+
+```{r}
+table_marj <-
+  drug_use_html %>% 
+  html_table() %>% 
+  first() 
+```
+
+Cleaning the table by removing the first row with the "note":
+
+```{r}
+table_marj <- table_marj %>% slice(-1)
+```
+
+### CSS Selectors
+
+Example of scraping information about the star wars movies from IMDB:
+
+First, need to get the html:
+
+```{r}
+swm_html <- read_html("https://www.imdb.com/list/ls070150896/")
+```
+
+Then, use CSS selectors to extract html code and convert it to text:
+
+```{r}
+title_vec <-
+  swm_html %>% 
+  html_elements(".ipc-title-link-wrapper .ipc-title__text") %>% 
+  html_text()
+
+metascore_vec <-
+  swm_html %>% 
+  html_elements(".metacritic-score-box") %>% 
+  html_text()
+
+runtime_vec <-
+  swm_html %>% 
+  html_elements(".dli-title-metadata-item:nth-child(2)") %>% 
+  html_text()
+
+swm_df <-
+  tibble(
+    title = title_vec,
+    score = metascore_vec,
+    runtime = runtime_vec)
+```
+
+### Using an API
+
+Accessing NYC's open data via API, instead of downloading them from the website, so that the data will auto update as the API updates:
+
+Importing as CSV:
+
+```{r}
+nyc_water <-
+  GET("https://data.cityofnewyork.us/resource/ia2d-e54m.csv") %>% 
+  content("parsed")
+```
+
+Can also import it as a JSON file, if we want:
+
+```{r}
+nyc_water <-
+  GET("https://data.cityofnewyork.us/resource/ia2d-e54m.json") %>% 
+  content("text") %>% 
+  jsonlite::fromJSON() %>% 
+  as_tibble()
+```
+
+Can also import data from data.gov as a CSV or JSON (CSV in this example):
+
+```{r message = FALSE}
+brfss_smart2010 <-
+  GET("https://chronicdata.cdc.gov/resource/acme-vg9e.csv",
+      query = list("$limit" = 5000)) %>% 
+  content("parsed")
+```
+
+By default, the CDC API limits data to the first 1000 rows. We changed this via the `query = list` command, which was found by poking around the API website.
+
+### Be Reasonable
+
+Every call is actually reaching out to the website and pulling information. If every time you knit a doc, it's pulling a significant amount of data, it will be noticed. There are also developers who limit the number of database entries that can be accessed in a single request-- in those cases, you'll need to iterate thru and combine the end results into a single dataset.
