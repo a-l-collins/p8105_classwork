@@ -1,0 +1,214 @@
+---
+title: "lecture 17 simulation"
+date: "2025-10-30"
+output: github_document
+---
+
+```{r include = FALSE}
+library(tidyverse)
+set.seed(1)
+```
+
+### Simulation: Mean and SD for one *n*
+
+The function from lecture 16, which simulates data from a normal distribution and returns estimates of the mean and sd for that data:
+
+```{r}
+sim_mean_sd = function(n, mu = 2, sigma = 3) {
+  
+  sim_data = tibble(
+    x = rnorm(n, mean = mu, sd = sigma),
+  )
+  
+  sim_data %>% 
+    summarize(
+      mu_hat = mean(x),
+      sigma_hat = sd(x)
+    )
+}
+```
+
+IRL, repeated sampling is difficult and annoying. On a computer, it's pretty easy, using simulations. E.g., running the above function 100 times, to see the effective randomness of *x* and on the mean and sd estimates:
+
+```{r}
+output = vector("list", 100)
+
+for (i in 1:100) {
+  output[[i]] = sim_mean_sd(30)
+}
+
+sim_results = bind_rows(output)
+
+sim_results
+```
+
+Replicating the above in an alternative form:
+
+- Iterate 100 times with a fixed sample size of 30
+- map `sim_mean_sd` over `sample_size` column to replicate the previous simulation
+
+```{r}
+sim_results_df = 
+  expand_grid(
+    sample_size = 30,
+    iter = 1:100) %>% 
+  mutate(
+    estimate_df = map(sample_size, sim_mean_sd)) %>% 
+  unnest(estimate_df)
+
+sim_results_df
+```
+
+The end result is a dataframe that can then be manipulated:
+
+```{r}
+sim_results_df %>% 
+  ggplot(aes(x = mu_hat)) + 
+  geom_density() +
+  theme_minimal()
+```
+
+```{r}
+sim_results_df %>% 
+  pivot_longer(
+    mu_hat:sigma_hat,
+    names_to = "parameter", 
+    values_to = "estimate") %>% 
+  group_by(parameter) %>% 
+  summarize(
+    emp_mean = mean(estimate),
+    emp_sd = sd(estimate)) %>% 
+  knitr::kable(digits = 3)
+```
+
+This provides us information on the distribution in a theoretical scenario, which can be compared against empirical models, and also provides a way to test statistical procedures with repeated sampling in a way that wouldn't be possible with single data sets.
+
+In cases where function input doesn't change, using an "anonymous" function with the syntax `(i)` which defines a function with the input `i`, lets you rerun the function multiple times while keeping the input the same:
+
+```{r}
+sim_results_df =   
+  map(1:100, \(i) sim_mean_sd(30, 2, 3)) %>% 
+  bind_rows()
+
+sim_results_df
+```
+
+### Simulation: Mean for several *n*s
+
+An example of iterating several times with a fixed *set* of sample sizes:
+
+```{r}
+sim_results_df = 
+  expand_grid(
+    sample_size = c(30, 60, 120, 240),
+    iter = 1:1000) %>% 
+  mutate(
+    estimate_df = map(sample_size, sim_mean_sd)) %>% 
+  unnest(estimate_df)
+
+sim_results_df
+```
+
+We can then manipulate the above data to see what it looks like:
+
+```{r}
+sim_results_df %>% 
+  mutate(
+    sample_size = str_c("n = ", sample_size),
+    sample_size = fct_inorder(sample_size)) %>% 
+  ggplot(aes(x = sample_size, y = mu_hat, fill = sample_size)) + 
+  geom_violin() +
+  theme_minimal()
+```
+
+```{r message = FALSE}
+sim_results_df %>% 
+  pivot_longer(
+    mu_hat:sigma_hat,
+    names_to = "parameter", 
+    values_to = "estimate") %>% 
+  group_by(parameter, sample_size) %>% 
+  summarize(
+    emp_mean = mean(estimate),
+    emp_var = var(estimate)) %>% 
+  knitr::kable(digits = 3)
+```
+
+### Simulation: SLR for one *n*
+
+A function estimating intercept and beta-1 for a simulated simple linear regression:
+
+```{r}
+sim_regression = function(n, beta0 = 2, beta1 = 3) {
+  
+  sim_data = 
+    tibble(
+      x = rnorm(n, mean = 1, sd = 1),
+      y = beta0 + beta1 * x + rnorm(n, 0, 1)
+    )
+  
+  ls_fit = lm(y ~ x, data = sim_data)
+  
+  tibble(
+    beta0_hat = coef(ls_fit)[1],
+    beta1_hat = coef(ls_fit)[2]
+  )
+}
+```
+
+Which we can then run 500 times to show the effect of randomness on intercepts and beta-1s:
+
+```{r}
+sim_results_df = 
+  expand_grid(
+    sample_size = 30,
+    iter = 1:500) %>% 
+  mutate(
+    estimate_df = map(sample_size, sim_regression)) %>% 
+  unnest(estimate_df)
+
+sim_results_df
+```
+
+We can then plot these estimates against each other on a plot, and see the overall trend in the way they are effected by randomness:
+
+```{r}
+sim_results_df %>% 
+  ggplot(aes(x = beta0_hat, y = beta1_hat)) + 
+  geom_point() +
+  theme_minimal()
+```
+
+### Varying two simulation parameters
+
+An example of iterating several times, where two different parameters have multiple options:
+
+```{r}
+sim_results_df = 
+  expand_grid(
+    sample_size = c(30, 60, 120, 240),
+    true_sd = c(6, 3),
+    iter = 1:1000) %>% 
+  mutate(
+    estimate_df = 
+      map2(sample_size, true_sd, \(n, sd) sim_mean_sd(n = n, sigma = sd))) %>% 
+  unnest(estimate_df)
+
+sim_results_df
+```
+
+Which we can then plot:
+
+```{r}
+sim_results_df %>% 
+  mutate(
+    true_sd = str_c("True SD: ", true_sd),
+    true_sd = fct_inorder(true_sd),
+    sample_size = str_c("n = ", sample_size),
+    sample_size = fct_inorder(sample_size)) %>% 
+  ggplot(aes(x = sample_size, y = mu_hat, fill = sample_size)) + 
+  geom_violin() + 
+  facet_grid(. ~ true_sd) +
+  theme_minimal()
+```
+
